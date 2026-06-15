@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 무한 알고리즘 트레이닝 플랫폼</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg-dark: #1e1e1e; --panel-bg: #252526; --border-color: #333333; --text-main: #d4d4d4; --accent: #007acc; --success: #4caf50; --warning: #ff9800; --danger: #ef5350; }
+        body { margin: 0; font-family: 'Pretendard', sans-serif; background-color: var(--bg-dark); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        
+        .left-panel { flex: 1.1; display: flex; flex-direction: column; border-right: 1px solid var(--border-color); background-color: var(--panel-bg); }
+        .top-nav { padding: 15px 20px; background: #181818; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .top-nav select { background: #3c3c3c; color: white; border: 1px solid #555; padding: 8px; border-radius: 4px; outline: none; }
+        
+        .btn-gen { background: #673ab7; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-history-toggle { background: #444; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+
+        .problem-section { padding: 20px; border-bottom: 1px solid var(--border-color); flex: 0.8; overflow-y: auto; }
+        .problem-title { font-size: 22px; margin-top: 0; color: #ffffff; }
+        .badge { display: inline-block; background: var(--warning); color: #000; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
+        
+        .ai-feedback-section { flex: 1.2; display: flex; flex-direction: column; background-color: #1e1e1e; }
+        .chat-header { padding: 10px 20px; background: #2d2d30; border-bottom: 1px solid var(--border-color); margin: 0; font-size: 16px; }
+        .chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { padding: 10px 14px; border-radius: 8px; max-width: 85%; line-height: 1.5; font-size: 14px; }
+        .bot-msg { background: #2d2d30; border-left: 3px solid var(--accent); align-self: flex-start; }
+        .user-msg { background: var(--accent); color: white; align-self: flex-end; }
+        .chat-input { display: flex; padding: 15px; background: #252526; border-top: 1px solid var(--border-color); gap: 10px; }
+        .chat-input input { flex: 1; background: #1e1e1e; border: 1px solid #555; color: white; padding: 10px; border-radius: 4px; outline: none; }
+        .chat-input button { background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+
+        .right-panel { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .editor-header { padding: 10px 20px; background: #2d2d30; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .editor-header select { background: #3c3c3c; color: white; border: 1px solid #555; padding: 5px 10px; border-radius: 4px; outline: none; }
+        
+        /* 타이머 UI */
+        .timer-display { background: #000; color: #00ff00; font-family: 'Fira Code', monospace; padding: 5px 10px; border-radius: 4px; font-weight: bold; border: 1px solid #333; }
+
+        .code-area { flex: 1; width: 100%; background: #1e1e1e; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 15px; padding: 20px; border: none; resize: none; outline: none; box-sizing: border-box; }
+        .action-bar { padding: 15px 20px; background: #252526; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; }
+        .btn-submit { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* 복습용 서랍 & 대시보드 UI */
+        .history-panel { position: absolute; top: 0; right: -450px; width: 450px; height: 100%; background: #1a1a1a; border-left: 1px solid var(--border-color); z-index: 10; transition: 0.3s; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;}
+        .history-panel.open { right: 0; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+        
+        .chart-container { background: #252526; padding: 15px; border-radius: 8px; margin-bottom: 15px; height: 180px; display: flex; justify-content: center; align-items: center; border: 1px solid #333;}
+        
+        .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .history-item { background: #2d2d30; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-left: 4px solid #673ab7; }
+        .history-item.correct { border-left-color: var(--success); }
+        .score-badge { background: #444; padding: 3px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px; color: #fff;}
+        .score-high { background: #007acc; }
+        .btn-del { background: none; color: var(--danger); border: none; cursor: pointer; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="left-panel">
+        <div class="top-nav">
+            <select id="difficultySelect">
+                <option value="비전공자 기초">비전공자 기초 (Basic)</option>
+                <option value="CS 전공자 수준" selected>CS 전공자 수준 (Standard)</option>
+                <option value="개발 현직자 수준">개발 현직자 수준 (Advanced)</option>
+            </select>
+            <button type="button" class="btn-gen" onclick="generateProblem()"><i class="fas fa-magic"></i> 새 문제 출제</button>
+            <button type="button" class="btn-history-toggle" onclick="toggleHistory()"><i class="fas fa-history"></i> 대시보드 및 복습 노트</button>
+        </div>
+
+        <div class="problem-section" id="problemSection">
+            <span class="badge" id="difficultyBadge">Level: 전공자</span>
+            <h2 class="problem-title" id="pTitle">새 문제를 생성해 주세요!</h2>
+            <p id="pDesc" style="color: #aaa;">지정된 타겟 수준에 맞춰 AI가 무작위로 문제를 큐레이션합니다.</p>
+        </div>
+
+        <div class="ai-feedback-section">
+            <h3 class="chat-header"><i class="fas fa-comments"></i> 1:1 실시간 맞춤 힌트 세션</h3>
+            <div class="chat-box" id="chatBox">
+                <div class="bubble bot-msg">문제를 새로 생성하면 타이머가 시작됩니다! 막히는 부분이 있다면 언제든 질문하세요.</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="questionInput" placeholder="힌트 요구나 막히는 로직을 질문하세요..." onkeypress="if(event.keyCode==13) sendQuestion()">
+                <button type="button" onclick="sendQuestion()"><i class="fas fa-location-arrow"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="editor-header">
+            <div>
+                <select id="languageSelect" onchange="changeTemplate()">
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Python">Python</option>
+                    <option value="C++">C++</option>
+                </select>
+            </div>
+            <div class="timer-display" id="timerDisplay"><i class="fas fa-stopwatch"></i> 00:00</div>
+        </div>
+        <textarea class="code-area" id="codeInput" spellcheck="false"></textarea>
+        <div class="action-bar">
+            <button type="button" class="btn-submit" onclick="runCode()"><i class="fas fa-check-circle"></i> 검증 및 제출 채점</button>
+        </div>
+
+        <div class="history-panel" id="historyPanel">
+            <h3 style="margin-top:0; display:flex; justify-content:space-between; color: white;">
+                <span><i class="fas fa-chart-pie"></i> 내 학습 통계 & 복습</span>
+                <i class="fas fa-times" style="cursor:pointer; color: #aaa;" onclick="toggleHistory()"></i>
+            </h3>
+            
+            <div class="chart-container">
+                <canvas id="statsChart"></canvas>
+            </div>
+
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentProblemId = null;
+        let timerInterval = null;
+        let timeElapsed = 0;
+        let myChart = null; 
+
+        function changeTemplate() {
+            const lang = document.getElementById('languageSelect').value;
+            const editor = document.getElementById('codeInput');
+            if (lang === 'JavaScript') editor.value = "function solution(input) {\n    let answer = 0;\n    return answer;\n}";
+            else if (lang === 'Python') editor.value = "def solution(input_data):\n    answer = 0\n    return answer";
+            else if (lang === 'C++') editor.value = "#include <iostream>\nusing namespace std;\n\nint solution() {\n    return 0;\n}";
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeElapsed = 0;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimerDisplay() {
+            let m = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+            let s = String(timeElapsed % 60).padStart(2, '0');
+            document.getElementById('timerDisplay').innerHTML = `<i class="fas fa-stopwatch"></i> ${m}:${s}`;
+        }
+
+        function toggleHistory() {
+            const panel = document.getElementById('historyPanel');
+            panel.classList.toggle('open');
+            if(panel.classList.contains('open')) loadHistoryList();
+        }
+
+        async function generateProblem() {
+            const diff = document.getElementById('difficultySelect').value;
+            document.getElementById('pTitle').innerText = "AI 컴파일 및 출제 위원 가동 중...";
+            document.getElementById('chatBox').innerHTML = '<div class="bubble bot-msg">타이머가 곧 시작됩니다! 화이팅 🚀</div>';
+            stopTimer();
+            timeElapsed = 0;
+            updateTimerDisplay();
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ difficulty: diff })
+                });
+                const data = await response.json();
+                currentProblemId = data.id;
+                document.getElementById('pTitle').innerText = data.title;
+                document.getElementById('pDesc').innerHTML = data.desc;
+                changeTemplate();
+                startTimer(); 
+            } catch (error) { alert('서버 연결 실패'); }
+        }
+
+        async function sendQuestion() {
+            const input = document.getElementById('questionInput');
+            const txt = input.value.trim();
+            if (!txt || !currentProblemId) return alert('문제를 먼저 생성하세요.');
+
+            appendMsg(txt, true);
+            input.value = '';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        problemId: currentProblemId,
+                        code: document.getElementById('codeInput').value,
+                        problemTitle: document.getElementById('pTitle').innerText,
+                        question: txt
+                    })
+                });
+                const data = await response.json();
+                appendMsg(data.answer, false);
+            } catch (e) { alert('채팅 전송 실패'); }
+        }
+
+        function appendMsg(text, isUser) {
+            const box = document.getElementById('chatBox');
+            const div = document.createElement('div');
+            div.className = `bubble ${isUser ? 'user-msg' : 'bot-msg'}`;
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function runCode() {
+            if(!currentProblemId) return alert('활성화된 문제가 없습니다.');
+            const btn = document.querySelector('.btn-submit');
+            btn.innerText = "채점 중...";
+
+            try {
+                const response = await fetch('http://localhost:5000/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        problemId: currentProblemId,
+                        code: document.getElementById('codeInput').value,
+                        language: document.getElementById('languageSelect').value,
+                        difficulty: document.getElementById('difficultySelect').value,
+                        problemTitle: document.getElementById('pTitle').innerText,
+                        problemDesc: document.getElementById('pDesc').innerText
+                    })
+                });
+                const res = await response.json();
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> 검증 및 제출 채점';
+                
+                if(res.isCorrect) {
+                    stopTimer(); 
+                    alert(`✅ 정답입니다! (AI 평가: ${res.score}점)\n소요 시간: ${document.getElementById('timerDisplay').innerText}\n\n${res.message}`);
+                } else {
+                    alert(`❌ 오답입니다. (0점)\n\n${res.message}`);
+                }
+            } catch (e) { btn.innerHTML = '채점 실패'; }
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            let correctCount = data.filter(d => d.is_correct).length;
+            let wrongCount = data.length - correctCount;
+
+            if(myChart) myChart.destroy(); 
+
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['정답', '오답'],
+                    datasets: [{
+                        data: [correctCount, wrongCount],
+                        backgroundColor: ['#4caf50', '#ef5350'],
+                        borderColor: '#252526',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#fff' } } }
+                }
+            });
+        }
+
+        async function loadHistoryList() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            try {
+                const res = await fetch('http://localhost:5000/api/history');
+                const items = await res.json();
+                
+                renderChart(items); 
+
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = `history-item ${item.is_correct ? 'correct' : ''}`;
+                    const scoreClass = item.score >= 80 ? 'score-high' : '';
+                    div.innerHTML = `
+                        <div onclick="restoreSession(${item.problem_id})" style="flex:1;">
+                            <small>[${item.difficulty}]</small>
+                            <div style="font-weight:bold; margin: 4px 0;">${item.title}</div>
+                            <small style="color:#aaa;">${item.language} / ${item.is_correct ? '정답' : '오답'} 
+                                <span class="score-badge ${scoreClass}">${item.score}점</span>
+                            </small>
+                        </div>
+                        <button type="button" class="btn-del" onclick="deleteHistory(event, ${item.submission_id})"><i class="fas fa-trash"></i></button>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) {}
+        }
+
+        async function restoreSession(probId) {
+            try {
+                const res = await fetch(`http://localhost:5000/api/history/${probId}`);
+                const data = await res.json();
+                
+                currentProblemId = data.problem.id;
+                document.getElementById('pTitle').innerText = data.problem.title;
+                document.getElementById('pDesc').innerHTML = data.problem.description;
+                document.getElementById('difficultyBadge').innerText = `Level: ${data.problem.difficulty}`;
+                document.getElementById('codeInput').value = data.lastCode;
+                document.getElementById('languageSelect').value = data.lastLang;
+
+                const box = document.getElementById('chatBox');
+                box.innerHTML = '';
+                data.chatHistory.forEach(c => appendMsg(c.message, c.sender === 'user'));
+                toggleHistory();
+                stopTimer(); 
+            } catch (e) { alert('복원 실패'); }
+        }
+
+        async function deleteHistory(e, subId) {
+            e.stopPropagation();
+            if(!confirm('이 풀이 기록을 복습 노트에서 영구 삭제하시겠습니까?')) return;
+            try {
+                await fetch(`http://localhost:5000/api/history/${subId}`, { method: 'DELETE' });
+                loadHistoryList();
+            } catch (e) {}
+        }
+        changeTemplate();
+    </script>
+</body>
+</html>
