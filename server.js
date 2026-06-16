@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3');
@@ -9,7 +11,6 @@ app.use(cors());
 app.use(express.json());
 
 // 환경 변수로 API 키 안전하게 로드
-// process.env.변수명 으로 키를 안전하게 불러옴
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 let db;
@@ -180,7 +181,7 @@ app.post('/api/chat', async (req, res) => {
     } catch (error) { res.status(500).json({ error: '채팅 실패' }); }
 });
 
-// [핵심 보완] 자동 채점 API (에러 방어 완벽 적용)
+// [핵심 보완] 자동 채점 API (채점 기준 완화 및 방어 로직 추가)
 app.post('/api/run', async (req, res) => {
     try {
         const { problemId, code, language, difficulty, problemTitle, problemDesc } = req.body;
@@ -205,7 +206,12 @@ app.post('/api/run', async (req, res) => {
         
         const grading = JSON.parse(text);
 
-        let finalMessage = grading.message || grading.feedback || "채점이 완료되었습니다.";
+        let finalMessage = grading.message;
+        if (!finalMessage && grading.feedback) {
+            finalMessage = grading.feedback;
+        } else if (!finalMessage) {
+            finalMessage = "채점이 완료되었습니다.";
+        }
 
         await db.run(
             'INSERT INTO submissions (problem_id, code, language, is_correct, feedback, score) VALUES (?, ?, ?, ?, ?, ?)',
@@ -219,12 +225,7 @@ app.post('/api/run', async (req, res) => {
         });
     } catch (error) { 
         console.error("채점 에러:", error);
-        // 🚨 AI 서버 과부하(429 에러) 발생 시 오답 대신 정확한 안내 메시지 전송!
-        res.json({
-            isCorrect: false,
-            message: "⚠️ 구글 AI 서버 트래픽이 초과되었습니다. (무료 할당량 초과)\n잠시 1분만 기다리셨다가 다시 채점 버튼을 눌러주세요!",
-            score: 0
-        });
+        res.status(500).json({ error: '채점 실패' }); 
     }
 });
 
