@@ -1,24 +1,41 @@
+<<<<<<< HEAD
 require('dotenv').config();
 
+=======
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
+<<<<<<< HEAD
+=======
+require('dotenv').config(); // 상단에 추가
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+<<<<<<< HEAD
 // 환경 변수로 API 키 안전하게 로드
+=======
+// process.env.변수명 으로 키를 안전하게 불러옴
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 let db;
 
+<<<<<<< HEAD
 // DB 초기화 (새로운 컬럼이 적용된 v2 데이터베이스)
 (async () => {
     db = await open({
         filename: '../ai_coding_db_v2.sqlite', 
+=======
+(async () => {
+    db = await open({
+        filename: '../ai_coding_db.sqlite', 
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
         driver: sqlite3.Database
     });
 
@@ -28,8 +45,11 @@ let db;
             title TEXT NOT NULL,
             description TEXT NOT NULL,
             difficulty TEXT NOT NULL,
+<<<<<<< HEAD
             company TEXT,
             category TEXT,
+=======
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
@@ -56,6 +76,7 @@ let db;
             FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
         )
     `);
+<<<<<<< HEAD
     console.log("📂 SQLite 데이터베이스 및 3대 혁신 기능 테이블 준비 완료!");
 })();
 
@@ -96,12 +117,38 @@ app.post('/api/generate', async (req, res) => {
             [problemData.title, problemData.desc, difficulty, company || '일반', problemData.category || '일반 구현']
         );
         res.json({ id: dbResult.lastID, company: company || '일반', ...problemData });
+=======
+    console.log("📂 SQLite 데이터베이스 준비 완료!");
+})();
+
+// [수정된 부분] 강력한 JSON 정제 로직 포함
+app.post('/api/generate', async (req, res) => {
+    try {
+        const { difficulty } = req.body; 
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const prompt = `알고리즘 문제 출제자입니다. 타겟 계층 [${difficulty}]에 맞는 문제를 생성하세요.
+반드시 JSON 형식만 반환하세요.
+{"title": "문제 제목", "desc": "문제 상세 설명(HTML 형식)"}`;
+        
+        const result = await model.generateContent(prompt);
+        let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        // 💡 제어 문자 완벽 제거
+        text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ""); 
+        
+        const problemData = JSON.parse(text);
+        const dbResult = await db.run(
+            'INSERT INTO problems (title, description, difficulty) VALUES (?, ?, ?)',
+            [problemData.title, problemData.desc, difficulty]
+        );
+        res.json({ id: dbResult.lastID, ...problemData });
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
     } catch (error) { 
         console.error("JSON 파싱 에러:", error);
         res.status(500).json({ error: '문제 생성 실패' }); 
     }
 });
 
+<<<<<<< HEAD
 // AI 코드 최적화(리팩토링) 및 복잡도 분석 API
 app.post('/api/refactor', async (req, res) => {
     try {
@@ -169,23 +216,33 @@ app.get('/api/recommend', async (req, res) => {
 });
 
 // 채팅 멘토 API
+=======
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 app.post('/api/chat', async (req, res) => {
     try {
         const { problemId, code, problemTitle, question } = req.body;
         await db.run('INSERT INTO chat_logs (problem_id, sender, message) VALUES (?, "user", ?)', [problemId, question]);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+<<<<<<< HEAD
         const result = await model.generateContent(`AI 멘토입니다. 정답 코드를 주지 말고 힌트만 주세요.\n문제: ${problemTitle}\n현재 코드:\n${code}\n질문: ${question}`);
+=======
+        const result = await model.generateContent(`AI 멘토입니다. 정답 코드를 주지 말고 힌트만 주세요.\n문제: ${problemTitle}\n질문: ${question}`);
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
         const answer = result.response.text();
         await db.run('INSERT INTO chat_logs (problem_id, sender, message) VALUES (?, "bot", ?)', [problemId, answer]);
         res.json({ answer });
     } catch (error) { res.status(500).json({ error: '채팅 실패' }); }
 });
 
+<<<<<<< HEAD
 // [핵심 보완] 자동 채점 API (에러 방어 완벽 적용)
+=======
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 app.post('/api/run', async (req, res) => {
     try {
         const { problemId, code, language, difficulty, problemTitle, problemDesc } = req.body;
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+<<<<<<< HEAD
         
         const prompt = `당신은 너그럽고 정확한 알고리즘 채점관입니다.
         제출된 코드가 문제의 요구사항과 핵심 로직(수식 등)을 충족한다면 반드시 정답(true) 처리하세요.
@@ -236,6 +293,27 @@ app.get('/api/history', async (req, res) => {
 });
 
 // 특정 히스토리 상세 조회 API
+=======
+        const prompt = `알고리즘 채점관입니다. 코드 정답 여부를 판별해 순수 JSON만 반환하세요.\n문제: ${problemTitle}\n조건: ${problemDesc}\n코드:\n${code}\n형식: {"isCorrect": true/false, "message": "피드백", "score": 85}`;
+        const result = await model.generateContent(prompt);
+        let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+        const grading = JSON.parse(text);
+
+        await db.run(
+            'INSERT INTO submissions (problem_id, code, language, is_correct, feedback, score) VALUES (?, ?, ?, ?, ?, ?)',
+            [problemId, code, language, grading.isCorrect ? 1 : 0, grading.message, grading.score || 0]
+        );
+        res.json(grading);
+    } catch (error) { res.status(500).json({ error: '채점 실패' }); }
+});
+
+app.get('/api/history', async (req, res) => {
+    const rows = await db.all(`SELECT s.id AS submission_id, p.id AS problem_id, p.title, p.difficulty, s.language, s.is_correct, s.score, s.created_at FROM submissions s JOIN problems p ON s.problem_id = p.id ORDER BY s.created_at DESC`);
+    res.json(rows);
+});
+
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 app.get('/api/history/:problemId', async (req, res) => {
     const problem = await db.get('SELECT * FROM problems WHERE id = ?', [req.params.problemId]);
     const codeBlock = await db.get('SELECT code, language FROM submissions WHERE problem_id = ? ORDER BY id DESC LIMIT 1', [req.params.problemId]);
@@ -243,7 +321,10 @@ app.get('/api/history/:problemId', async (req, res) => {
     res.json({ problem, lastCode: codeBlock?.code || '', lastLang: codeBlock?.language || 'JavaScript', chatHistory: chats });
 });
 
+<<<<<<< HEAD
 // 히스토리 삭제 API
+=======
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
 app.delete('/api/history/:submissionId', async (req, res) => {
     await db.run('DELETE FROM submissions WHERE id = ?', [req.params.submissionId]);
     res.json({ success: true });

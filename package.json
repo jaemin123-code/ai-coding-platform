@@ -2,7 +2,10 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.6",
+<<<<<<< HEAD
     "dotenv": "^17.4.2",
+=======
+>>>>>>> 25257aa067a48692026411432ba70708654f2747
     "express": "^5.2.1",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1"
